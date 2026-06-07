@@ -20,13 +20,24 @@ def url_ok(u):
 
 
 def load_env():
+    """ローカルは .claude/.env、GitHub Actions等は環境変数から読む"""
     env = {}
-    with open(os.path.join(HERE, ".claude", ".env"), encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if line and not line.startswith("#") and "=" in line:
-                k, v = line.split("=", 1)
-                env[k.strip()] = v.strip()
+    path = os.path.join(HERE, ".claude", ".env")
+    if os.path.exists(path):
+        with open(path, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    k, v = line.split("=", 1)
+                    env[k.strip()] = v.strip()
+    # 不足分は環境変数で補完（クラウド実行用）
+    defaults = {"KINTONE_BASE_URL": "https://carmatch0.cybozu.com", "KINTONE_APP_ID": "70"}
+    for k in ["KINTONE_BASE_URL", "KINTONE_SUBDOMAIN", "KINTONE_APP_ID", "KINTONE_API_TOKEN"]:
+        if not env.get(k) and os.environ.get(k):
+            env[k] = os.environ[k]
+    for k, v in defaults.items():
+        if not env.get(k):
+            env[k] = v
     return env
 
 

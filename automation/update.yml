@@ -1,0 +1,45 @@
+name: 在庫データ更新
+
+on:
+  schedule:
+    - cron: '0 21 * * *'        # 毎日 06:00 JST（21:00 UTC）に自動更新
+  workflow_dispatch:            # GitHub画面から手動実行
+  repository_dispatch:          # kintoneボタン→GAS から起動
+    types: [update-inventory]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-inventory
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 在庫データを再生成（kintone→docs/data.json）
+        env:
+          KINTONE_BASE_URL: https://carmatch0.cybozu.com
+          KINTONE_APP_ID: '70'
+          KINTONE_API_TOKEN: ${{ secrets.KINTONE_API_TOKEN }}
+        run: python build_snapshot.py
+
+      - name: 変更があればコミット＆プッシュ
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if [ -n "$(git status --porcelain docs/data.json)" ]; then
+            git add docs/data.json
+            git commit -m "在庫データ自動更新 ($(date -u +%Y-%m-%dT%H:%MZ))"
+            git push
+            echo "更新あり：プッシュ完了"
+          else
+            echo "変更なし：スキップ"
+          fi
