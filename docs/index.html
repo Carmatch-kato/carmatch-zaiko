@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>カーチス共有在庫 一覧</title>
+<style>
+  :root { --accent:#0b5fff; --ink:#1c2530; --muted:#6b7785; --line:#e3e8ee; --bg:#f5f7fa; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:"Hiragino Sans","Yu Gothic",Meiryo,sans-serif; color:var(--ink); background:var(--bg); -webkit-font-smoothing:antialiased; }
+  header { background:#fff; border-bottom:1px solid var(--line); padding:14px 18px; position:sticky; top:0; z-index:20; }
+  header h1 { font-size:18px; display:flex; align-items:center; gap:8px; }
+  header .sub { font-size:12px; color:var(--muted); margin-top:2px; }
+
+  .filters { max-width:1200px; margin:0 auto; padding:14px 16px; display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; }
+  .f { background:#fff; border:1px solid var(--line); border-radius:10px; padding:8px 10px; }
+  .f label { display:block; font-size:11px; color:var(--muted); margin-bottom:3px; }
+  .f input, .f select { width:100%; border:none; outline:none; font-size:14px; background:transparent; color:var(--ink); }
+  .f .row { display:flex; align-items:center; gap:6px; }
+  .f .row input { text-align:right; }
+  .f .row span { color:var(--muted); font-size:12px; }
+  .searchbox { grid-column:1 / -1; }
+  .searchbox input { font-size:15px; }
+
+  .bar { max-width:1200px; margin:0 auto; padding:4px 18px 0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
+  .bar .count { font-size:14px; font-weight:700; }
+  .bar .count b { color:var(--accent); font-size:18px; }
+  .bar .right { display:flex; gap:8px; align-items:center; }
+  .bar select { padding:6px 8px; border:1px solid var(--line); border-radius:8px; background:#fff; font-size:13px; }
+  .reset { border:1px solid var(--line); background:#fff; border-radius:8px; padding:6px 12px; font-size:13px; cursor:pointer; }
+
+  .grid { max-width:1200px; margin:0 auto; padding:14px 16px 60px;
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:14px; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:12px; overflow:hidden; display:flex; flex-direction:column; transition:box-shadow .15s, transform .15s; }
+  .card:hover { box-shadow:0 6px 18px rgba(0,0,0,.10); transform:translateY(-2px); }
+  .thumb { aspect-ratio:4/3; background:#eef1f4; overflow:hidden; position:relative; }
+  .thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+  .thumb .noimg { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#aab4bf; font-size:13px; }
+  .body { padding:10px 12px 12px; display:flex; flex-direction:column; gap:6px; flex:1; }
+  .name { font-size:15px; font-weight:700; line-height:1.3; }
+  .grade { font-size:12px; color:var(--muted); }
+  .price { font-size:20px; font-weight:800; color:var(--accent); margin-top:2px; }
+  .price small { font-size:11px; color:var(--muted); font-weight:500; }
+  .specs { display:flex; flex-wrap:wrap; gap:4px 10px; font-size:12px; color:#465160; margin-top:auto; padding-top:6px; border-top:1px dashed var(--line); }
+  .specs span b { color:var(--ink); }
+
+  /* 詳細モーダル */
+  .modal-bg { position:fixed; inset:0; background:rgba(15,22,32,.6); z-index:50; display:none; align-items:flex-start; justify-content:center; overflow-y:auto; padding:24px 12px; }
+  .modal-bg.open { display:flex; }
+  .modal { background:#fff; border-radius:14px; max-width:880px; width:100%; overflow:hidden; box-shadow:0 20px 50px rgba(0,0,0,.3); }
+  .modal-head { display:flex; justify-content:space-between; align-items:flex-start; padding:16px 20px; border-bottom:1px solid var(--line); position:sticky; top:0; background:#fff; }
+  .modal-head .t { font-size:18px; font-weight:800; }
+  .modal-head .g { font-size:13px; color:var(--muted); margin-top:2px; }
+  .modal-head .close { border:none; background:#eef1f4; width:34px; height:34px; border-radius:50%; font-size:20px; cursor:pointer; color:#475160; flex:none; }
+  .gallery { background:#0d1620; }
+  .gallery .main { width:100%; aspect-ratio:4/3; background:#0d1620; }
+  .gallery .main img { width:100%; height:100%; object-fit:contain; display:block; }
+  .thumbs { display:flex; gap:6px; padding:8px; overflow-x:auto; background:#11202e; }
+  .thumbs img { height:56px; width:74px; object-fit:cover; border-radius:5px; cursor:pointer; opacity:.55; border:2px solid transparent; flex:none; }
+  .thumbs img.active { opacity:1; border-color:#fff; }
+  .mbody { padding:18px 20px 24px; }
+  .mprice { font-size:26px; font-weight:800; color:var(--accent); margin-bottom:12px; }
+  .mprice small { font-size:12px; color:var(--muted); font-weight:500; }
+  .specgrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-bottom:16px; }
+  .specgrid .s { background:var(--bg); border-radius:8px; padding:8px 10px; }
+  .specgrid .s .k { font-size:11px; color:var(--muted); }
+  .specgrid .s .v { font-size:15px; font-weight:700; margin-top:2px; }
+  .mblock { margin-top:14px; }
+  .mblock h4 { font-size:13px; color:var(--muted); margin-bottom:5px; }
+  .mblock p { font-size:14px; line-height:1.7; white-space:pre-wrap; }
+  .report-img { width:100%; max-width:560px; border:1px solid var(--line); border-radius:8px; display:block; cursor:zoom-in; }
+  .report-note { font-size:11px; color:var(--muted); margin-top:4px; }
+  .inquiry { margin:14px 0 4px; padding:14px; background:#eef4ff; border:1px solid #cfe0ff; border-radius:10px; }
+  .inquiry-btn { display:inline-block; background:var(--accent); color:#fff; text-decoration:none; padding:12px 24px; border-radius:8px; font-weight:700; font-size:15px; }
+  .inquiry-btn:hover { opacity:.9; }
+  .inquiry-note { font-size:13px; color:#33414f; margin-top:10px; line-height:1.6; }
+  .inquiry-note b { font-size:16px; color:var(--accent); }
+  .copybtn { margin-left:8px; border:1px solid var(--accent); background:#fff; color:var(--accent); border-radius:6px; padding:3px 12px; font-size:12px; cursor:pointer; }
+
+  .empty { max-width:1200px; margin:40px auto; text-align:center; color:var(--muted); }
+  .more { display:block; margin:10px auto 50px; padding:12px 28px; border:none; border-radius:10px; background:var(--accent); color:#fff; font-size:15px; font-weight:700; cursor:pointer; }
+  footer { text-align:center; font-size:11px; color:#9aa7b4; padding:10px; }
+</style>
+</head>
+<body>
+  <header>
+    <h1>🚗 カーチス共有在庫 一覧</h1>
+    <div class="sub" id="updated">読み込み中…</div>
+  </header>
+
+  <div class="filters">
+    <div class="f searchbox">
+      <label>キーワード（車名・グレード・装備）</label>
+      <input type="text" id="q" placeholder="例：Ｎ−ＢＯＸ アルファード 4WD ＥＴＣ">
+    </div>
+    <div class="f">
+      <label>価格（業販・万円）</label>
+      <div class="row"><input type="number" id="priceMin" placeholder="下限"><span>〜</span><input type="number" id="priceMax" placeholder="上限"></div>
+    </div>
+    <div class="f">
+      <label>年式（初年度登録・西暦）</label>
+      <div class="row"><input type="number" id="yearMin" placeholder="2010"><span>〜</span><input type="number" id="yearMax" placeholder="2024"></div>
+    </div>
+    <div class="f">
+      <label>走行距離（km以下）</label>
+      <input type="number" id="kmMax" placeholder="例：50000">
+    </div>
+    <div class="f">
+      <label>シフト</label>
+      <select id="shift"><option value="">すべて</option></select>
+    </div>
+    <div class="f">
+      <label>メーカー</label>
+      <select id="maker"><option value="">すべて</option></select>
+    </div>
+    <div class="f">
+      <label>店舗・拠点</label>
+      <select id="place"><option value="">すべて</option></select>
+    </div>
+    <div class="f">
+      <label>燃料</label>
+      <select id="fuel"><option value="">すべて</option></select>
+    </div>
+    <div class="f">
+      <label>駆動</label>
+      <select id="drive"><option value="">すべて</option></select>
+    </div>
+    <div class="f">
+      <label>ボディ</label>
+      <select id="shape"><option value="">すべて</option></select>
+    </div>
+    <div class="f">
+      <label>色</label>
+      <select id="color"><option value="">すべて</option></select>
+    </div>
+  </div>
+
+  <div class="bar">
+    <div class="count">該当 <b id="cnt">0</b> 台</div>
+    <div class="right">
+      <select id="sort">
+        <option value="price_asc">価格が安い順</option>
+        <option value="price_desc">価格が高い順</option>
+        <option value="km_asc">走行が少ない順</option>
+        <option value="year_desc">年式が新しい順</option>
+      </select>
+      <button class="reset" id="reset">条件クリア</button>
+    </div>
+  </div>
+
+  <div class="grid" id="grid"></div>
+  <div class="empty" id="empty" style="display:none">条件に合う車両がありません。</div>
+  <button class="more" id="more" style="display:none">もっと見る</button>
+  <footer>業販価格は加盟店向け参考価格です。データはアプリ70のスナップショット（1日1回更新）。</footer>
+
+  <!-- 詳細モーダル -->
+  <div class="modal-bg" id="modal">
+    <div class="modal">
+      <div class="modal-head">
+        <div><div class="t" id="mTitle"></div><div class="g" id="mGrade"></div></div>
+        <button class="close" id="mClose">×</button>
+      </div>
+      <div class="gallery">
+        <div class="main"><img id="mMain" src="" alt=""></div>
+        <div class="thumbs" id="mThumbs"></div>
+      </div>
+      <div class="mbody">
+        <div class="mprice" id="mPrice"></div>
+        <div class="inquiry">
+          <a class="inquiry-btn" id="mInquiry"
+             href="https://app.jibun-apps.jp/page/companies/GPrFuWhWQDZTgxyexcHw/page_apps/hjTIeTtzNvYHJtG30LKB/records/new"
+             target="_blank" rel="noopener">📩 この車両を問い合わせる</a>
+          <div class="inquiry-note">
+            ボタンを押すと、整理番号 <b id="mSeiri"></b> が<strong>入力済み</strong>のお問い合わせフォームが開きます。
+            <button class="copybtn" id="mCopy">整理番号をコピー</button>
+          </div>
+        </div>
+        <div class="specgrid" id="mSpecs"></div>
+        <div class="mblock" id="mEquipWrap"><h4>装備品</h4><p id="mEquip"></p></div>
+        <div class="mblock" id="mAppealWrap"><h4>アピールポイント</h4><p id="mAppeal"></p></div>
+        <div class="mblock" id="mReportWrap">
+          <h4>状態評価書</h4>
+          <a id="mReportLink" href="#" target="_blank" rel="noopener">
+            <img id="mReport" class="report-img" src="" alt="状態評価書">
+          </a>
+          <div class="report-note">画像をクリックで拡大表示</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  var INQUIRY_FORM = "https://app.jibun-apps.jp/page/companies/GPrFuWhWQDZTgxyexcHw/page_apps/hjTIeTtzNvYHJtG30LKB/records/new";
+  var CARS = [];
+  var view = [];
+  var shown = 0;
+  var PAGE = 60;
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function toYen(v) { var n = parseInt(v, 10); return isNaN(n) ? "—" : "¥" + n.toLocaleString(); }
+  function toKm(v) { var n = parseInt(v, 10); return isNaN(n) ? "—" : n.toLocaleString() + " km"; }
+  function ymLabel(v) { // 201305 -> 2013年5月
+    if (!v || v.length < 4) return "—";
+    var y = v.substring(0, 4), m = v.substring(4, 6);
+    return y + "年" + (m ? parseInt(m, 10) + "月" : "");
+  }
+  function year(v) { return v && v.length >= 4 ? parseInt(v.substring(0, 4), 10) : 0; }
+  function wareki(v) { // 201305 -> 平成25年5月
+    if (!v || v.length < 4) return "";
+    var y = parseInt(v.substring(0, 4), 10);
+    var m = v.length >= 6 ? parseInt(v.substring(4, 6), 10) : 0;
+    var era, n;
+    if (y > 2019 || (y === 2019 && m >= 5)) { era = "令和"; n = y - 2018; }
+    else if (y >= 1989) { era = "平成"; n = y - 1988; }
+    else if (y >= 1926) { era = "昭和"; n = y - 1925; }
+    else return "";
+    return era + (n === 1 ? "元" : n) + "年" + (m ? m + "月" : "");
+  }
+  function ymBoth(v) { // 西暦＋和暦
+    var g = ymLabel(v), w = wareki(v);
+    return g + (w ? "（" + w + "）" : "");
+  }
+  function num(v) { var n = parseInt(v, 10); return isNaN(n) ? 0 : n; }
+
+  fetch("data.json").then(function (r) { return r.json(); }).then(function (d) {
+    CARS = d.cars || [];
+    $("updated").textContent = "全 " + d.count + " 台（業販在庫）";
+    // 各セレクトの選択肢を自動生成
+    fillSelect("shift", "シフト");
+    fillSelect("maker", "メーカー名");
+    fillSelect("place", "在庫場所名");
+    fillSelect("fuel", "燃料名");
+    fillSelect("drive", "駆動名");
+    fillSelect("shape", "形状名");
+    fillSelect("color", "色名");
+    apply();
+  }).catch(function (e) { $("updated").textContent = "データ読み込みに失敗しました"; });
+
+  function fillSelect(id, field) {
+    var vals = {};
+    CARS.forEach(function (c) { if (c[field]) vals[c[field]] = 1; });
+    Object.keys(vals).sort().forEach(function (v) {
+      var o = document.createElement("option"); o.value = v; o.textContent = v;
+      $(id).appendChild(o);
+    });
+  }
+
+  function apply() {
+    var q = $("q").value.trim().toLowerCase();
+    var pMin = $("priceMin").value ? num($("priceMin").value) * 10000 : null;
+    var pMax = $("priceMax").value ? num($("priceMax").value) * 10000 : null;
+    var yMin = $("yearMin").value ? num($("yearMin").value) : null;
+    var yMax = $("yearMax").value ? num($("yearMax").value) : null;
+    var kMax = $("kmMax").value ? num($("kmMax").value) : null;
+    var shift = $("shift").value;
+    var maker = $("maker").value;
+    var place = $("place").value;
+    var fuel = $("fuel").value;
+    var drive = $("drive").value;
+    var shape = $("shape").value;
+    var color = $("color").value;
+
+    view = CARS.filter(function (c) {
+      if (q) {
+        var hay = ((c["車名"] || "") + " " + (c["グレード名"] || "") + " " + (c["装備品"] || "") + " " + (c["アピールポイント"] || "")).toLowerCase();
+        if (hay.indexOf(q) === -1) return false;
+      }
+      var price = num(c["業販価格"]);
+      if (pMin !== null && price < pMin) return false;
+      if (pMax !== null && price > pMax) return false;
+      var yr = year(c["初年度登録年月日"]);
+      if (yMin !== null && yr < yMin) return false;
+      if (yMax !== null && yr > yMax) return false;
+      if (kMax !== null && num(c["走行距離"]) > kMax) return false;
+      if (shift && c["シフト"] !== shift) return false;
+      if (maker && c["メーカー名"] !== maker) return false;
+      if (place && c["在庫場所名"] !== place) return false;
+      if (fuel && c["燃料名"] !== fuel) return false;
+      if (drive && c["駆動名"] !== drive) return false;
+      if (shape && c["形状名"] !== shape) return false;
+      if (color && c["色名"] !== color) return false;
+      return true;
+    });
+
+    var s = $("sort").value;
+    view.sort(function (a, b) {
+      if (s === "price_asc") return num(a["業販価格"]) - num(b["業販価格"]);
+      if (s === "price_desc") return num(b["業販価格"]) - num(a["業販価格"]);
+      if (s === "km_asc") return num(a["走行距離"]) - num(b["走行距離"]);
+      if (s === "year_desc") return year(b["初年度登録年月日"]) - year(a["初年度登録年月日"]);
+      return 0;
+    });
+
+    $("cnt").textContent = view.length;
+    shown = 0;
+    $("grid").innerHTML = "";
+    $("empty").style.display = view.length ? "none" : "block";
+    renderMore();
+  }
+
+  function renderMore() {
+    var frag = document.createDocumentFragment();
+    var end = Math.min(shown + PAGE, view.length);
+    for (var i = shown; i < end; i++) { frag.appendChild(cardEl(view[i])); }
+    $("grid").appendChild(frag);
+    shown = end;
+    $("more").style.display = shown < view.length ? "block" : "none";
+  }
+
+  function cardEl(c) {
+    var img = c.front || (c.images && c.images[0]) || "";
+    var el = document.createElement("div");
+    el.className = "card";
+    el.style.cursor = "pointer";
+    el.addEventListener("click", function () { openDetail(c); });
+    el.innerHTML =
+      '<div class="thumb">' +
+        (img ? '<img loading="lazy" src="' + img + '" alt="" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">' : '') +
+        '<div class="noimg" style="display:' + (img ? 'none' : 'flex') + '">NO IMAGE</div>' +
+      '</div>' +
+      '<div class="body">' +
+        '<div class="grade">' + esc(c["メーカー名"] || "") + '</div>' +
+        '<div class="name">' + esc(c["車名"] || "（車名不明）") + '</div>' +
+        '<div class="grade">' + esc(c["グレード名"] || "") + '</div>' +
+        '<div class="price">' + toYen(c["業販価格"]) + ' <small>業販</small></div>' +
+        '<div class="specs">' +
+          '<span>📅 <b>' + ymBoth(c["初年度登録年月日"]) + '</b></span>' +
+          '<span>🛣 <b>' + toKm(c["走行距離"]) + '</b></span>' +
+          '<span>🚙 <b>' + esc(c["形状名"] || "—") + '</b></span>' +
+          '<span>🎨 <b>' + esc(c["色名"] || "—") + '</b></span>' +
+          '<span>⚙ <b>' + esc(c["シフト"] || "—") + '</b></span>' +
+          '<span>🔧 <b>' + esc(c["駆動名"] || "—") + '</b></span>' +
+          '<span>⛽ <b>' + esc(c["燃料名"] || "—") + '</b></span>' +
+          '<span>📍 <b>' + esc(c["在庫場所名"] || "—") + '</b></span>' +
+        '</div>' +
+      '</div>';
+    return el;
+  }
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (m) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m];
+    });
+  }
+
+  // ---- 詳細モーダル ----
+  function inspDate(v) { // 20270829 -> 2027年8月
+    if (!v || v.length < 6) return v || "—";
+    return v.substring(0, 4) + "年" + parseInt(v.substring(4, 6), 10) + "月";
+  }
+  function setSpec(k, v) { return '<div class="s"><div class="k">' + k + '</div><div class="v">' + esc(v || "—") + '</div></div>'; }
+
+  function openDetail(c) {
+    $("mTitle").textContent = c["車名"] || "（車名不明）";
+    $("mGrade").textContent = c["グレード名"] || "";
+    $("mPrice").innerHTML = toYen(c["業販価格"]) + ' <small>業販価格</small>';
+    var seiri = c["整理番号"] || "";
+    $("mSeiri").textContent = seiri || "—";
+    // 問い合わせフォームに整理番号・車名・グレードを自動入力（じぶんアプリ: ?フィールドコード=値）
+    function qp(k, v) { return encodeURIComponent(k) + "=" + encodeURIComponent(v || ""); }
+    $("mInquiry").href = INQUIRY_FORM + "?" +
+      qp("整理番号", seiri) + "&" +
+      qp("車名", c["車名"]) + "&" +
+      qp("グレード", c["グレード名"]);
+
+    $("mSpecs").innerHTML =
+      setSpec("メーカー", c["メーカー名"]) +
+      setSpec("ボディ", c["形状名"]) +
+      setSpec("色", c["色名"]) +
+      setSpec("年式（初年度登録）", ymBoth(c["初年度登録年月日"])) +
+      setSpec("走行距離", toKm(c["走行距離"])) +
+      setSpec("排気量", (c["排気量"] || "—") + "cc") +
+      setSpec("シフト", c["シフト"]) +
+      setSpec("駆動", c["駆動名"]) +
+      setSpec("燃料", c["燃料名"]) +
+      setSpec("ハンドル", c["ハンドル名"]) +
+      setSpec("店舗・拠点", c["在庫場所名"]) +
+      setSpec("車検満了", inspDate(c["車検満了日"])) +
+      setSpec("整理番号", c["整理番号"]);
+
+    var eq = c["装備品"] || "";
+    $("mEquip").textContent = eq;
+    $("mEquipWrap").style.display = eq ? "block" : "none";
+    var ap = c["アピールポイント"] || "";
+    $("mAppeal").textContent = ap;
+    $("mAppealWrap").style.display = ap ? "block" : "none";
+
+    // 状態評価書（あれば表示）
+    if (c.report) {
+      $("mReport").src = c.report;
+      $("mReportLink").href = c.report;
+      $("mReportWrap").style.display = "block";
+    } else {
+      $("mReportWrap").style.display = "none";
+    }
+
+    // ギャラリー
+    var imgs = (c.images && c.images.length) ? c.images : (c.front ? [c.front] : []);
+    $("mMain").src = imgs[0] || "";
+    var th = $("mThumbs");
+    th.innerHTML = "";
+    imgs.forEach(function (u, i) {
+      var t = document.createElement("img");
+      t.src = u; t.loading = "lazy";
+      if (i === 0) t.className = "active";
+      t.addEventListener("click", function () {
+        $("mMain").src = u;
+        Array.prototype.forEach.call(th.children, function (x) { x.className = ""; });
+        t.className = "active";
+      });
+      th.appendChild(t);
+    });
+    th.style.display = imgs.length > 1 ? "flex" : "none";
+
+    $("modal").classList.add("open");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeDetail() {
+    $("modal").classList.remove("open");
+    document.body.style.overflow = "";
+  }
+  function copySeiri() {
+    var s = $("mSeiri").textContent;
+    if (navigator.clipboard && s && s !== "—") { navigator.clipboard.writeText(s); }
+    return s;
+  }
+  $("mCopy").addEventListener("click", function () {
+    copySeiri();
+    $("mCopy").textContent = "コピーしました ✓";
+    setTimeout(function () { $("mCopy").textContent = "いまコピー"; }, 1500);
+  });
+  // 問い合わせボタン：開く前に整理番号を自動コピー
+  $("mInquiry").addEventListener("click", function () { copySeiri(); });
+  $("mClose").addEventListener("click", closeDetail);
+  $("modal").addEventListener("click", function (e) { if (e.target === $("modal")) closeDetail(); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeDetail(); });
+
+  ["q", "priceMin", "priceMax", "yearMin", "yearMax", "kmMax", "shift", "maker", "place", "fuel", "drive", "shape", "color", "sort"].forEach(function (id) {
+    $(id).addEventListener("input", apply);
+    $(id).addEventListener("change", apply);
+  });
+  $("more").addEventListener("click", renderMore);
+  $("reset").addEventListener("click", function () {
+    ["q", "priceMin", "priceMax", "yearMin", "yearMax", "kmMax"].forEach(function (id) { $(id).value = ""; });
+    ["shift", "maker", "place", "fuel", "drive", "shape", "color"].forEach(function (id) { $(id).value = ""; });
+    $("sort").value = "price_asc"; apply();
+  });
+</script>
+</body>
+</html>

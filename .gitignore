@@ -1,0 +1,7 @@
+# 機密情報
+.claude/.env
+.claude/settings.local.json
+
+# OS
+.DS_Store
+Thumbs.db
