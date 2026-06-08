@@ -1,6 +1,5 @@
-# 機密情報
-.claude/.env
-.claude/settings.local.json
+# 機密情報・ローカル設定（.claude 配下はすべて除外：.env / settings / launch.json 等）
+.claude/
 
 # OS
 .DS_Store
@@ -9,3 +8,12 @@ Thumbs.db
 # トークン埋め込み版（手作業貼付用・コミット禁止）
 cmZaiko_update_main_READY.gs
 cmZaiko_update_button_READY.js
+
+# 説明書・PDF・キャプチャ（運用/セキュリティ内部情報・public repo に出さない／配布は手元PDFで）
+README.md
+README.pdf
+運用手順書.md
+運用手順書.pdf
+加盟店向け_公開サイト利用ガイド.md
+加盟店向け_公開サイト利用ガイド.pdf
+docs/manual-assets/
