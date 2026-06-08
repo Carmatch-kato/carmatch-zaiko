@@ -5,3 +5,7 @@
 # OS
 .DS_Store
 Thumbs.db
+
+# トークン埋め込み版（手作業貼付用・コミット禁止）
+cmZaiko_update_main_READY.gs
+cmZaiko_update_button_READY.js
