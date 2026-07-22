@@ -26,3 +26,6 @@ zaikoData*.csv
 _appmap.py
 _app70_fields.json
 _app70_layout.json
+
+# 旧ローカルメモ（内部運用情報のためpublicに出さない・ローカル保持）
+Memory.MD
