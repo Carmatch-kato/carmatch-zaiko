@@ -17,3 +17,12 @@ README.pdf
 加盟店向け_公開サイト利用ガイド.md
 加盟店向け_公開サイト利用ガイド.pdf
 docs/manual-assets/
+
+# カーチスFTP自動取込（Windowsサーバー用・機密/社内運用情報のためpublicリポに出さない）
+curtisZaiko_import.ps1
+curtisZaiko_config_READY.ps1
+curtisZaiko_設置手順.md
+zaikoData*.csv
+_appmap.py
+_app70_fields.json
+_app70_layout.json
