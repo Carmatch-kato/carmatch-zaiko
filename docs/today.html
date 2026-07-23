@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>本日の投稿文（カーチス共有在庫）</title>
+<style>
+  body { font-family: -apple-system, "Hiragino Sans", sans-serif; margin: 0; padding: 24px 16px;
+         background: #f0f4f9; color: #1a2433; }
+  .card { max-width: 480px; margin: 0 auto; background: #fff; border-radius: 16px;
+          padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,.08); }
+  h1 { font-size: 16px; margin: 0 0 4px; }
+  .sub { font-size: 12px; color: #6b7a90; margin-bottom: 14px; }
+  textarea { width: 100%; box-sizing: border-box; font-size: 15px; line-height: 1.6;
+             border: 1.5px solid #d5dee9; border-radius: 10px; padding: 12px;
+             min-height: 130px; resize: none; background: #fafcff; }
+  button { display: block; width: 100%; margin-top: 14px; padding: 16px; font-size: 17px;
+           font-weight: 700; color: #fff; background: #1f6feb; border: none;
+           border-radius: 12px; cursor: pointer; }
+  button:active { background: #1557b8; }
+  .done { background: #1a9e55 !important; }
+  .count { font-size: 40px; font-weight: 800; color: #1f6feb; text-align: center; margin: 8px 0 2px; }
+  .cl { text-align: center; font-size: 12px; color: #6b7a90; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>カーチス共有在庫｜本日の投稿文</h1>
+  <div class="sub">生成: 2026-07-23 10:25（サイト更新と同時に毎朝自動で新しくなります）</div>
+  <div class="count">789 <span style="font-size:18px">台</span></div>
+  <div class="cl">本日の掲載台数</div>
+  <textarea id="msg" readonly>【カーチス共有在庫 更新】7/23(木)
+本日の在庫は 789 台です！
+最新の在庫一覧はこちら↓
+https://carmatch-kato.github.io/carmatch-zaiko/</textarea>
+  <button id="btn" onclick="copyMsg()">投稿文をコピー</button>
+</div>
+<script>
+function copyMsg() {
+  var t = document.getElementById('msg');
+  navigator.clipboard.writeText(t.value).then(function() {
+    var b = document.getElementById('btn');
+    b.textContent = 'コピーしました！Messengerに貼り付けてください';
+    b.classList.add('done');
+    setTimeout(function() { b.textContent = '投稿文をコピー'; b.classList.remove('done'); }, 3000);
+  }, function() {
+    t.select(); document.execCommand('copy');
+  });
+}
+</script>
+</body>
+</html>
