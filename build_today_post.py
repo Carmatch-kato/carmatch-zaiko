@@ -8,7 +8,8 @@ import json
 import datetime
 import pathlib
 
-SITE_URL = "https://carmatch-kato.github.io/carmatch-zaiko/"
+# 投稿文に載せるURL＝加盟店サイト（ログイン制・在庫一覧は中の「カーチス共有在庫」から）
+SITE_URL = "https://zaiko.app.carmatch.co.jp"
 
 data = json.load(open("docs/data.json", encoding="utf-8"))
 count = data["count"]
