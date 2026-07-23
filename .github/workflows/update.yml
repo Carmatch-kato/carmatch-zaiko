@@ -41,6 +41,8 @@ jobs:
           if [ -n "$(git status --porcelain docs/data.json docs/today.html)" ]; then
             git add docs/data.json docs/today.html
             git commit -m "在庫データ自動更新 ($(date -u +%Y-%m-%dT%H:%MZ))"
+            # ビルド中に他のプッシュがあっても失敗しないようリベースしてからプッシュ
+            git pull --rebase origin main
             git push
             echo "更新あり：プッシュ完了"
           else
